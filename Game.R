@@ -93,7 +93,8 @@ Game_function <- function(x, varnames) {
                           if_student_like_mobile,
                           parents_like_mobile,
                           if_learning_good_mobile) # only improved knowledge may be considered by parents before game subscription
-                                                   # most likely they won't remember to connect dots with actual behavioral change
+                                                   # most likely they won't remember to connect dots with actual behavioral change in a short time
+                                                   # how long do they think before making purchase? What are the important factors?
   
   board_sale_risk <- min(if_learning_good_board,
                          if_student_like_board,
@@ -173,8 +174,8 @@ Game_function <- function(x, varnames) {
   value_good_reputation_board[1] <- 0 # value starts at year 2
   
   # Calculate value of adopting good eating habits with board game intervention
-  
-  value_nutrition_board <- vv (Value_nutrition * (Board_user * behavioural_change_board),
+  # Divided by 1000 to get per 1000 value
+  value_nutrition_board <- vv (Value_nutrition * ((Board_user * behavioural_change_board)/1000),
                                var_CV, n_years,
                                relative_trend = inflation_rate)* value_nutrition_risk_board
   
