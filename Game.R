@@ -151,6 +151,11 @@ Game_function <- function(x, varnames) {
   benefit_mobile_total <- income_mobile_subscription + value_good_reputation_mobile +
                           saving_nutrition_course + value_nutrition_mobile
   
+  # Sum all benefits for school
+  
+  benefit_school_mobile <- income_mobile_subscription + value_good_reputation_mobile +
+                            saving_nutrition_course
+  
   # Calculate total benefits for board game intervention
   
   # Calculate total savings for board game intervention
@@ -184,13 +189,26 @@ Game_function <- function(x, varnames) {
   benefit_board_total <- saving_board_total + income_board_sale + 
                          value_good_reputation_board + value_nutrition_board
   
+  # Sum all benefits for school
+  
+  benefit_school_board <- saving_board_total + income_board_sale + 
+    value_good_reputation_board
+  
   # Calculate net profit for mobile game intervention
   
   mobile_intervention_result <- benefit_mobile_total - cost_mobile_total
   
+  # NPV for school
+  
+  mobile_school_result <- benefit_school_mobile - cost_mobile_total
+  
   # Calculate net profit for board game intervention
   
   board_intervention_result <- benefit_board_total - cost_board_total
+  
+  # NPV for school
+  
+  board_school_result <- benefit_school_board - cost_board_total
   
   # Calculate NPV with discount rate
   
@@ -202,8 +220,22 @@ Game_function <- function(x, varnames) {
                          discount_rate = discount_rate,
                          calculate_NPV = TRUE)
   
+  # NPV for school
+  
+  NPV_mobile_school <- discount (x = mobile_school_result,
+                          discount_rate = discount_rate,
+                          calculate_NPV = TRUE)
+  
+  NPV_board_school <- discount (x = board_school_result,
+                         discount_rate = discount_rate,
+                         calculate_NPV = TRUE)
+  
   return(list(NPV_mobile_game = NPV_mobile,
               NPV_board_game = NPV_board,
+              NPV_mobile_school = NPV_mobile_school,
+              NPV_board_school = NPV_board_school,
+              Cashflow_mobile_school = mobile_school_result,
+              Cashflow_board_school = board_school_result,
               total_costs_mobile = sum(cost_mobile_total),
               total_costs_board = sum(cost_board_total),
               Cashflow_mobile_game = mobile_intervention_result,
@@ -217,11 +249,17 @@ input_game <- read.csv("Game.csv")
 
 Game_mc_simulation <- mcSimulation(estimate = estimate_read_csv("Game.csv"),
                                    model_function = Game_function,
-                                   numberOfModelRuns = 1000,
+                                   numberOfModelRuns = 10000,
                                    functionSyntax = "plainNames")
 
 
 # Plot distributions histogram
+
+plot_distributions(mcSimulation_object = Game_mc_simulation,
+                   vars = c("NPV_mobile_school", "NPV_board_school"),
+                   method = 'hist_simple_overlay',
+                   base_size = 7)
+
 
 plot_distributions(mcSimulation_object = Game_mc_simulation,
                    vars = c("NPV_mobile_game", "NPV_board_game"),
@@ -234,10 +272,18 @@ plot_distributions(mcSimulation_object = Game_mc_simulation,
                    vars = c("NPV_mobile_game", "NPV_board_game"),
                    method = 'boxplot')
 
+plot_distributions(mcSimulation_object = Game_mc_simulation,
+                   vars = c("NPV_mobile_school", "NPV_board_school"),
+                   method = 'boxplot')
+
 # Plot distributions smooth overlay
 
 plot_distributions(mcSimulation_object = Game_mc_simulation,
                    vars = c("NPV_mobile_game", "NPV_board_game"),
+                   method = 'smooth_simple_overlay')
+
+plot_distributions(mcSimulation_object = Game_mc_simulation,
+                   vars = c("NPV_mobile_school", "NPV_board_school"),
                    method = 'smooth_simple_overlay')
 
 # Plot cashflows
@@ -253,27 +299,31 @@ plot_cashflow(mcSimulation_object = Game_mc_simulation,
               x_axis_name = "Year",
               y_axis_name = "Cashlow in million Myanmar Kyat") 
 
-
+plot_cashflow(mcSimulation_object = Game_mc_simulation,
+              cashflow_var_name = c("Cashflow_board_school", "Cashflow_mobile_school"))
 #Find EVPI 
 
 mcSimulation_table <- data.frame(Game_mc_simulation$x, 
-                                 Game_mc_simulation$y[1:3])
+                                 Game_mc_simulation$y[1:4])
 
 evpi_mobile <- multi_EVPI(mc = mcSimulation_table, first_out_var = "NPV_mobile_game")
 evpi_board <- multi_EVPI(mc = mcSimulation_table, first_out_var = "NPV_board_game")
+evpi_mobile_school <- multi_EVPI(mc = mcSimulation_table, first_out_var = "NPV_mobile_school")
+evpi_board_school <- multi_EVPI(mc = mcSimulation_table, first_out_var = "NPV_board_school")
 
 
 
 plot_evpi(evpi_mobile, decision_vars = "NPV_mobile_game")
 plot_evpi(evpi_board, decision_vars = "NPV_board_game")
-
+plot_evpi(evpi_mobile_school, decision_vars = "NPV_mobile_school")
+plot_evpi(evpi_board_school, decision_vars = "NPV_board_school")
 
 #Find PLS result
 pls_result <- plsr.mcSimulation(object = Game_mc_simulation,
                                 resultName = names
                                 (Game_mc_simulation$y)[1], 
                                 ncomp = 1)
-
+names(Game_mc_simulation$y)
 plot_pls(pls_result, input_table = input_game, threshold = 0)
 
 # Summary
@@ -282,7 +332,7 @@ install.packages("gtExtras")
 install.packages("svglite")
 library(gtExtras)
 library(svglite)
-mcSimulation_summary <- data.frame(Game_mc_simulation$x[2:38], 
+mcSimulation_summary <- data.frame(Game_mc_simulation$x[2:41], 
                                    Game_mc_simulation$y[1:3])
 
 gt_plt_summary(mcSimulation_summary) 
@@ -290,6 +340,12 @@ gt_plt_summary(mcSimulation_summary)
 # summary of cashflow
 summary(Game_mc_simulation$y$Cashflow_mobile_game1)
 summary(Game_mc_simulation$y$Cashflow_board_game1)
+summary(Game_mc_simulation$y$Cashflow_mobile_school1)
+summary(Game_mc_simulation$y$Cashflow_board_school1)
 
-summary(Game_mc_simulation$y$NPV_mobile_game)
-summary(Game_mc_simulation$y$NPV_board_game)
+# summary of total cost 
+summary(Game_mc_simulation$y$total_costs_mobile)
+summary(Game_mc_simulation$y$total_costs_board)
+
+
+
