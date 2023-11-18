@@ -249,7 +249,7 @@ input_game <- read.csv("Game.csv")
 
 Game_mc_simulation <- mcSimulation(estimate = estimate_read_csv("Game.csv"),
                                    model_function = Game_function,
-                                   numberOfModelRuns = 10000,
+                                   numberOfModelRuns = 1000,
                                    functionSyntax = "plainNames")
 
 
@@ -258,22 +258,26 @@ Game_mc_simulation <- mcSimulation(estimate = estimate_read_csv("Game.csv"),
 plot_distributions(mcSimulation_object = Game_mc_simulation,
                    vars = c("NPV_mobile_school", "NPV_board_school"),
                    method = 'hist_simple_overlay',
+                   x_axis_name = 'million Myanmar kyat',
                    base_size = 7)
 
 
 plot_distributions(mcSimulation_object = Game_mc_simulation,
                    vars = c("NPV_mobile_game", "NPV_board_game"),
                    method = 'hist_simple_overlay',
+                   x_axis_name = 'million Myanmar kyat',
                    base_size = 7)
 
 # Plot distributions boxplot
 
 plot_distributions(mcSimulation_object = Game_mc_simulation,
                    vars = c("NPV_mobile_game", "NPV_board_game"),
+                   x_axis_name = 'million Myanmar kyat',
                    method = 'boxplot')
 
 plot_distributions(mcSimulation_object = Game_mc_simulation,
                    vars = c("NPV_mobile_school", "NPV_board_school"),
+                   x_axis_name = 'million Myanmar kyat',
                    method = 'boxplot')
 
 # Plot distributions smooth overlay
@@ -297,10 +301,12 @@ plot_cashflow(mcSimulation_object = Game_mc_simulation,
 plot_cashflow(mcSimulation_object = Game_mc_simulation,
               cashflow_var_name = c("Cashflow_board_game", "Cashflow_mobile_game"),
               x_axis_name = "Year",
-              y_axis_name = "Cashlow in million Myanmar Kyat") 
+              y_axis_name = "Cashflow in million Myanmar Kyat") 
 
 plot_cashflow(mcSimulation_object = Game_mc_simulation,
-              cashflow_var_name = c("Cashflow_board_school", "Cashflow_mobile_school"))
+              cashflow_var_name = c("Cashflow_board_school", "Cashflow_mobile_school"),
+              x_axis_name = 'Year',
+              y_axis_name = 'Cashflow in million Myanmar Kyat')
 #Find EVPI 
 
 mcSimulation_table <- data.frame(Game_mc_simulation$x, 
@@ -319,17 +325,40 @@ plot_evpi(evpi_mobile_school, decision_vars = "NPV_mobile_school")
 plot_evpi(evpi_board_school, decision_vars = "NPV_board_school")
 
 #Find PLS result
+
+
 pls_result <- plsr.mcSimulation(object = Game_mc_simulation,
                                 resultName = names
-                                (Game_mc_simulation$y)[1], 
+                                (Game_mc_simulation$y)[1], # NPV_mobile_game
                                 ncomp = 1)
 names(Game_mc_simulation$y)
-plot_pls(pls_result, input_table = input_game, threshold = 0)
+plot_pls(pls_result, input_table = input_game, threshold = 0.9)
+
+
+pls_result <- plsr.mcSimulation(object = Game_mc_simulation,
+                                resultName = names
+                                (Game_mc_simulation$y)[2], # NPV_board_game
+                                ncomp = 1)
+plot_pls(pls_result, input_table = input_game, threshold = 0.9)
+
+
+pls_result <- plsr.mcSimulation(object = Game_mc_simulation,
+                                resultName = names
+                                (Game_mc_simulation$y)[3], # NPV_mobile_school
+                                ncomp = 1)
+plot_pls(pls_result, input_table = input_game, threshold = 0.9)
+
+
+pls_result <- plsr.mcSimulation(object = Game_mc_simulation,
+                                resultName = names
+                                (Game_mc_simulation$y)[4], 
+                                ncomp = 1)
+plot_pls(pls_result, input_table = input_game, threshold = 0.9) # NPV_board_school
 
 # Summary
 
-install.packages("gtExtras")
-install.packages("svglite")
+#install.packages("gtExtras")
+#install.packages("svglite")
 library(gtExtras)
 library(svglite)
 mcSimulation_summary <- data.frame(Game_mc_simulation$x[2:41], 
@@ -343,9 +372,14 @@ summary(Game_mc_simulation$y$Cashflow_board_game1)
 summary(Game_mc_simulation$y$Cashflow_mobile_school1)
 summary(Game_mc_simulation$y$Cashflow_board_school1)
 
+# summary of NPV
+summary(Game_mc_simulation$y$NPV_mobile_game) 
+summary(Game_mc_simulation$y$NPV_board_game)
+summary(Game_mc_simulation$y$NPV_mobile_school)
+summary(Game_mc_simulation$y$NPV_board_school)
+
 # summary of total cost 
 summary(Game_mc_simulation$y$total_costs_mobile)
 summary(Game_mc_simulation$y$total_costs_board)
-
 
 
